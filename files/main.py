@@ -35,7 +35,7 @@ class main:
 
         # 按钮-1
         self.button1_start = Button(self.mywin, text='step-1', fg='#F5F5F5', bg='#7A7A7A',
-                                    command=self.run_prog1,
+                                    command=self.run_button1,
                                     height=1, width=15, relief=GROOVE, bd=2,
                                     activebackground='#F5F5F5', activeforeground='#535353')
         self.button1_start.place(relx=0.45, rely=0.5, anchor=tk.SE)
@@ -69,10 +69,31 @@ class main:
         self.signal = False
         self.time = time.time()
         self.finder = FileFinder('e:\\test')
+        self.test_path = 'd:\\anaconda3' if os.path.isdir('d:/temp') else 'e:/test'
 
     def run(self):
         self.mywin.mainloop()
-    
+
+    def run_button1(self):
+        th = threading.Thread(target=self.run_prog1)
+        th.setDaemon(True)
+        th.start()
+
+    def run_button2(self):
+        th = threading.Thread(target=self.run_prog2)
+        th.setDaemon(True)
+        th.start()
+
+    def run_button3(self):
+        th = threading.Thread(target=self.run_prog3)
+        th.setDaemon(True)
+        th.start()
+
+    def run_button4(self):
+        th = threading.Thread(target=self.run_prog4)
+        th.setDaemon(True)
+        th.start()
+
     # find subpath and files
     def run_prog1(self):
         # t = time.time()
@@ -81,7 +102,7 @@ class main:
         #     self.update_progress_bar(percent, used_time, name='step-1')
         #     time.sleep(0.1)
 
-        finder = FileFinder('e:\\test')
+        finder = FileFinder(self.test_path)
         self.time = time.time()
         with futures.ThreadPoolExecutor(max_workers=2) as executor:
             to_do = []
@@ -90,8 +111,9 @@ class main:
             to_do.append(future1)
             future_dict.update({future1: 1})
             print('process-{} start ... '.format(1))
+
             self.signal = False
-            future2 = executor.submit(self.run_prog1_update_bar)
+            future2 = executor.submit(self.run_prog1_update_bar, 'step-1')
             to_do.append(future2)
             future_dict.update({future2: 2})
             print('process-{} start ... '.format(2))
@@ -99,18 +121,22 @@ class main:
             for future in futures.as_completed(to_do):
                 if future_dict[future] == 1:
                     result = future.result()
-                    print(result)
+                    # print(result)
                     self.finder.find_file_list = result
-                print('find files process-{} end'.format(future_dict[future]))
-                self.signal = True
+                    self.signal = True
+                    print('find files process-{} end'.format(future_dict[future]))
 
-    def run_prog1_update_bar(self):
-        name = 'step-1: find files'
+    def run_prog1_update_bar(self, name):
         print(name)
-        while time.time()-self.time < 10:
+        percent = 0
+        while True:
+            time.sleep(1)
             used_time = int(time.time() - self.time)
-            percent = used_time*10
+            percent += 1
             self.update_progress_bar(percent, used_time, name=name)
+            if self.signal:
+                print('progress bar process end')
+                break
 
     def run_prog2(self):
         t = time.time()
@@ -141,26 +167,6 @@ class main:
         self.var_progress_bar_percent.set('%0.2f %%' % percent)
         green_length = int(self.bar_length * percent / 100)
         self.canvas_progress_bar.coords(self.canvas_shape, (0, 0, green_length, 25))
-
-    def run_button1(self):
-        th = threading.Thread(target=self.run_prog1)
-        th.setDaemon(True)
-        th.start()
-
-    def run_button2(self):
-        th = threading.Thread(target=self.run_prog2)
-        th.setDaemon(True)
-        th.start()
-
-    def run_button3(self):
-        th = threading.Thread(target=self.run_prog3)
-        th.setDaemon(True)
-        th.start()
-
-    def run_button4(self):
-        th = threading.Thread(target=self.run_prog4)
-        th.setDaemon(True)
-        th.start()
 
 
 class FileFinder:
@@ -333,4 +339,4 @@ class FileFinder:
 w = main()
 w.run()
 print('exit prog')
-print(w.finder.find_file_list)
+print('check files num={}'.format(len(w.finder.find_file_list)))
