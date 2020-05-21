@@ -35,25 +35,29 @@ class main:
 
         # 按钮-1
         self.button1_start = Button(self.mywin, text='step-1', fg='#F5F5F5', bg='#7A7A7A',
-                                    command=self.run_button1, height=1, width=15, relief=GROOVE, bd=2,
+                                    command=self.run_prog1,
+                                    height=1, width=15, relief=GROOVE, bd=2,
                                     activebackground='#F5F5F5', activeforeground='#535353')
         self.button1_start.place(relx=0.45, rely=0.5, anchor=tk.SE)
 
         # 按钮-2
         self.button2_start = Button(self.mywin, text='step-2', fg='#F5F5F5', bg='#7A7A7A',
-                                    command=self.run_button2, height=1, width=15, relief=GROOVE, bd=2,
+                                    command=self.run_button2,
+                                    height=1, width=15, relief=GROOVE, bd=2,
                                     activebackground='#F5F5F5', activeforeground='#535353')
         self.button2_start.place(relx=0.45, rely=0.5, anchor=tk.SW)
 
         # 按钮-3
         self.button3_start = Button(self.mywin, text='step-3', fg='#F5F5F5', bg='#7A7A7A',
-                                    command=self.run_button3, height=1, width=15, relief=GROOVE, bd=2,
+                                    command=self.run_button3,
+                                    height=1, width=15, relief=GROOVE, bd=2,
                                     activebackground='#F5F5F5', activeforeground='#535353')
         self.button3_start.place(relx=0.45, rely=0.5, anchor=tk.NE)
 
         # 按钮-4
         self.button4_start = Button(self.mywin, text='step-4', fg='#F5F5F5', bg='#7A7A7A',
-                                    command=self.run_button4, height=1, width=15, relief=GROOVE, bd=2,
+                                    command=self.run_button4,
+                                    height=1, width=15, relief=GROOVE, bd=2,
                                     activebackground='#F5F5F5', activeforeground='#535353')
         self.button4_start.place(relx=0.45, rely=0.5, anchor=tk.NW)
 
@@ -79,7 +83,7 @@ class main:
 
         finder = FileFinder('e:\\test')
         self.time = time.time()
-        with futures.ProcessPoolExecutor(max_workers=2) as executor:
+        with futures.ThreadPoolExecutor(max_workers=2) as executor:
             to_do = []
             future_dict = dict()
             future1 = executor.submit(finder.run_subdir_files)
@@ -97,14 +101,15 @@ class main:
                     result = future.result()
                     print(result)
                     self.finder.find_file_list = result
-                    print('find files process-{} end'.format(future_dict[future]))
-                    self.signal = True
+                print('find files process-{} end'.format(future_dict[future]))
+                self.signal = True
 
     def run_prog1_update_bar(self):
         name = 'step-1: find files'
-        while time.time()-self.time < 3:
+        print(name)
+        while time.time()-self.time < 10:
             used_time = int(time.time() - self.time)
-            percent = 1
+            percent = used_time*10
             self.update_progress_bar(percent, used_time, name=name)
 
     def run_prog2(self):
@@ -324,7 +329,8 @@ class FileFinder:
             #     m5.update(data)
         return m5.digest()
 
-
+# freeze.support()
 w = main()
 w.run()
+print('exit prog')
 print(w.finder.find_file_list)
