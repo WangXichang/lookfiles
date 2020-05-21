@@ -68,8 +68,9 @@ class main:
 
         self.signal = False
         self.time = time.time()
-        self.finder = FileFinder('e:\\test')
         self.test_path = 'd:\\anaconda3' if os.path.isdir('d:/temp') else 'e:/test'
+        self.finder = FileFinder(self.test_path)
+        self.time_step = 0.5    # for progress bar
 
     def run(self):
         self.mywin.mainloop()
@@ -102,7 +103,8 @@ class main:
         #     self.update_progress_bar(percent, used_time, name='step-1')
         #     time.sleep(0.1)
 
-        finder = FileFinder(self.test_path)
+        # finder = FileFinder(self.test_path)
+        finder = self.finder
         self.time = time.time()
         with futures.ThreadPoolExecutor(max_workers=2) as executor:
             to_do = []
@@ -130,11 +132,13 @@ class main:
         print(name)
         percent = 0
         while True:
-            time.sleep(1)
+            time.sleep(0.1)
             used_time = int(time.time() - self.time)
             percent += 1
             self.update_progress_bar(percent, used_time, name=name)
             if self.signal:
+                percent = 0
+                self.update_progress_bar(percent, used_time, name='finished, elapsed=')
                 print('progress bar process end')
                 break
 
