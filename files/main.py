@@ -339,8 +339,9 @@ class FileFinder:
             #     m5.update(data)
         return m5.digest()
 
-# freeze.support()
-w = main()
-w.run()
-print('exit prog')
-print('check files num={}'.format(len(w.finder.find_file_list)))
+
+if __name__ == '__main__':
+    w = main()
+    w.run()
+    print('exit prog')
+    print('check files num={}'.format(len(w.finder.find_file_list)))
