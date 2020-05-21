@@ -8,6 +8,7 @@ import os
 from concurrent import futures
 from tkinter import Canvas, Tk, StringVar, Label, Button, CENTER, NW, GROOVE
 import tkinter as tk
+import tkinter.messagebox as msgbox
 
 
 class main:
@@ -66,9 +67,15 @@ class main:
         self.button3_start.grid(row=3, column=3, padx=10, pady=10)
         self.button4_start.grid(row=3, column=4, padx=10, pady=10)
 
+        self.label_path = tk.Label(self.mywin, text='path name:', bg='#535363', fg='#F5F5F5')
+        self.label_path.grid(row=4, column=1)
+        self.entry_path = tk.Entry(self.mywin, bd=5)
+        self.entry_path.grid(row=4, column=2)
+        # self.entry_path.pack()
+
         self.signal = False
         self.time = time.time()
-        self.test_path = 'd:\\anaconda3' if os.path.isdir('d:/temp') else 'e:/test'
+        self.test_path = 'e:\\test'
         self.finder = FileFinder(self.test_path)
         self.time_step = 0.5    # for progress bar
 
@@ -97,28 +104,22 @@ class main:
 
     # find subpath and files
     def run_prog1(self):
-        # t = time.time()
-        # for percent in range(1, 101):
-        #     used_time = int(time.time() - t)
-        #     self.update_progress_bar(percent, used_time, name='step-1')
-        #     time.sleep(0.1)
-
         # finder = FileFinder(self.test_path)
         finder = self.finder
         self.time = time.time()
-        with futures.ThreadPoolExecutor(max_workers=2) as executor:
+        with futures.ThreadPoolExecutor() as executor:
             to_do = []
             future_dict = dict()
             future1 = executor.submit(finder.run_subdir_files)
             to_do.append(future1)
             future_dict.update({future1: 1})
-            print('process-{} start ... '.format(1))
+            print('step-1 process-{} start ... '.format(1))
 
             self.signal = False
             future2 = executor.submit(self.run_prog1_update_bar, 'step-1')
             to_do.append(future2)
             future_dict.update({future2: 2})
-            print('process-{} start ... '.format(2))
+            print('bar process-{} start ... '.format(2))
 
             for future in futures.as_completed(to_do):
                 if future_dict[future] == 1:
@@ -129,7 +130,7 @@ class main:
                     print('find files process-{} end'.format(future_dict[future]))
 
     def run_prog1_update_bar(self, name):
-        print(name)
+        # print(name)
         percent = 0
         while True:
             time.sleep(0.1)
@@ -139,7 +140,8 @@ class main:
             if self.signal:
                 percent = 0
                 self.update_progress_bar(percent, used_time, name='finished, elapsed=')
-                print('progress bar process end')
+                # print('progress bar process end')
+                msgbox.showinfo('bar process', 'task running end')
                 break
 
     def run_prog2(self):
