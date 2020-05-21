@@ -16,8 +16,9 @@ class main:
         self.mywin = Tk()
         self.mywin.title('Check Same Files')
         self.mywin.geometry('800x500+290+100')
-        self.mywin.resizable(False, False)
+        # self.mywin.resizable(False, False)
         self.mywin.config(bg='#535363')
+        self.mywin.resizable = (True, True)
 
         # 进度条
         self.bar_length = 630
@@ -25,14 +26,14 @@ class main:
         self.canvas_shape = self.canvas_progress_bar.create_rectangle(0, 0, 0, 25, fill='green')
         self.canvas_text = self.canvas_progress_bar.create_text(292, 4, anchor=NW)
         self.canvas_progress_bar.itemconfig(self.canvas_text, text='00:00:00')
-        self.canvas_progress_bar.place(relx=0.45, rely=0.4, anchor=CENTER)
+        # self.canvas_progress_bar.place(relx=0.45, rely=0.4, anchor=CENTER)
 
         self.var_progress_bar_percent = StringVar()
         self.var_progress_bar_percent.set('00.00 %')
         self.label_progress_bar_percent = Label(self.mywin,
                                                 textvariable=self.var_progress_bar_percent,
                                                 fg='#F5F5F5', bg='#535353')
-        self.label_progress_bar_percent.place(relx=0.89, rely=0.4, anchor=CENTER)
+        # self.label_progress_bar_percent.place(relx=0.89, rely=0.4, anchor=CENTER)
 
         # 按钮-1
         self.button1_start = Button(self.mywin, text='step-1', fg='#F5F5F5', bg='#7A7A7A',
@@ -62,15 +63,21 @@ class main:
                                     activebackground='#F5F5F5', activeforeground='#535353')
         self.button4_start.place(relx=0.45, rely=0.5, anchor=tk.NW)
 
-        self.button1_start.grid(row=3, column=1, padx=10, pady=10)
-        self.button2_start.grid(row=3, column=2, padx=10, pady=10)
-        self.button3_start.grid(row=3, column=3, padx=10, pady=10)
-        self.button4_start.grid(row=3, column=4, padx=10, pady=10)
-
-        self.label_path = tk.Label(self.mywin, text='path name:', bg='#535363', fg='#F5F5F5')
-        self.label_path.grid(row=4, column=1)
+        self.label_path = tk.Label(self.mywin, text='path name:',
+                                   bg='#535363', fg='#F5F5F5')
         self.entry_path = tk.Entry(self.mywin, bd=5)
-        self.entry_path.grid(row=4, column=2)
+
+        self.button1_start.grid(row=2, column=1, padx=10, pady=10)
+        self.button2_start.grid(row=2, column=2, padx=10, pady=10)
+        self.button3_start.grid(row=2, column=3, padx=10, pady=10)
+        self.button4_start.grid(row=2, column=4, padx=10, pady=10)
+
+        self.path_frame = tk.Frame(self.mywin).grid(row=3, column=1, columnspan=4)
+
+        self.label_path.grid(row=3, column=1, sticky=tk.E)
+        self.entry_path.grid(row=3, column=2, columnspan=3, sticky=tk.W)
+        self.canvas_progress_bar.grid(row=4, column=1, columnspan=3, padx=10, pady=10)
+        self.label_progress_bar_percent.grid(row=4, column=4)
         # self.entry_path.pack()
 
         self.signal = False
