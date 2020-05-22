@@ -63,8 +63,10 @@ class main:
                                     activebackground='#F5F5F5', activeforeground='#535353')
         self.button4_start.place(relx=0.45, rely=0.5, anchor=tk.NW)
 
-        self.label_path = tk.Label(self.mywin, text='path name:',
-                                   bg='#535363', fg='#F5F5F5')
+        self.label_path = tk.Label(self.mywin,
+                                   text='path name:',
+                                   bg='#535363',
+                                   fg='#F5F5F5')
         self.entry_path = tk.Entry(self.mywin, bd=5)
 
         self.button1_start.grid(row=2, column=1, padx=10, pady=10)
@@ -72,24 +74,31 @@ class main:
         self.button3_start.grid(row=2, column=3, padx=10, pady=10)
         self.button4_start.grid(row=2, column=4, padx=10, pady=10)
 
-        self.path_frame = tk.Frame(self.mywin).grid(row=3, column=1, columnspan=4)
+        self.label_path.place(x=5, y=68) # grid(row=3, column=1, sticky='W')
+        self.entry_path.place(x=80, y=65, width=700)        # grid(row=4, column=1, columnspan=7, sticky='WE')
 
-        self.label_path.grid(row=3, column=1, sticky=tk.E)
-        self.entry_path.grid(row=3, column=2, columnspan=3, sticky=tk.W)
-        self.canvas_progress_bar.grid(row=4, column=1, columnspan=3, padx=10, pady=10)
-        self.label_progress_bar_percent.grid(row=4, column=4)
+        self.text_result = tk.Text(self.mywin, width=110, height=25)
+        self.text_result.place(x=12, y=105)
+        # self.path_frame = tk.Frame(self.mywin).grid(row=6, column=1, columnspan=4)
+
+        self.canvas_progress_bar.place(x=5, y = 470, width=790)  # grid(row=7, column=1, columnspan=4, padx=10, pady=10)
+        self.label_progress_bar_percent.place(x=5, y=440)  # grid(row=9, column=1)
         # self.entry_path.pack()
 
         self.signal = False
         self.time = time.time()
-        self.test_path = 'd:\\anaconda3'
-        self.finder = FileFinder(self.test_path)
+        self.entry_path.insert(tk.INSERT, 'e:/test')
+        self.test_path = None
+        self.finder = None
         self.time_step = 0.5    # for progress bar
 
     def run(self):
         self.mywin.mainloop()
 
     def run_button1(self):
+        self.test_path = self.entry_path.get()
+        self.finder = FileFinder(self.test_path)
+        self.text_result.insert(tk.INSERT, '='*60+'\n')
         th = threading.Thread(target=self.run_prog1)
         th.setDaemon(True)
         th.start()
@@ -120,21 +129,28 @@ class main:
             future1 = executor.submit(finder.run_subdir_files)
             to_do.append(future1)
             future_dict.update({future1: 1})
-            print('step-1 process-{} start ... '.format(1))
+            # print('step-1 process-{} start ... '.format(1))
+            self.text_result.insert(tk.INSERT, 'step-1 process-{} start ... \n'.format(1))
 
             self.signal = False
             future2 = executor.submit(self.run_prog1_update_bar, 'step-1')
             to_do.append(future2)
             future_dict.update({future2: 2})
-            print('bar process-{} start ... '.format(2))
+            # print('bar process-{} start ... '.format(2))
+            self.text_result.insert(tk.INSERT, 'bar process-{} start ... \n'.format(2))
 
             for future in futures.as_completed(to_do):
                 if future_dict[future] == 1:
                     result = future.result()
-                    # print(result)
                     self.finder.find_file_list = result
                     self.signal = True
-                    print('find files process-{} end'.format(future_dict[future]))
+                    self.text_result.insert(tk.INSERT, 'find files process-{} end\n'.format(future_dict[future]))
+                    self.text_result.insert(tk.INSERT, '-'*60+'\n')
+                    [self.text_result.insert(tk.INSERT, str(f)+'\n') for i, f in enumerate(result) if i < 5]
+                    self.text_result.insert(tk.INSERT, '-'*60+'\n')
+                    end_str = 'check files num={}\nelapsed={:.3f}sec\nrunning end\n'.\
+                        format(len(self.finder.find_file_list), time.time()-self.time)
+                    self.text_result.insert(tk.INSERT, end_str+'='*60)
 
     def run_prog1_update_bar(self, name):
         # print(name)
@@ -217,7 +233,7 @@ class FileFinder:
         return self.find_file_list
 
     def get_subdir_files(self, check_dir):
-        self.find_dir_num +=1
+        self.find_dir_num += 1
         # pbar.log()
         this_size = 0
         try:
@@ -304,7 +320,8 @@ class FileFinder:
         pool.join()
         return zip(file_copy, find_file_list)
 
-    def get_file_md5(self, filename):
+    @staticmethod
+    def get_file_md5(filename):
         fp = open(filename, 'rb')
         m5 = hashlib.md5()
         m5.update(fp.read())
@@ -352,5 +369,3 @@ class FileFinder:
 if __name__ == '__main__':
     w = main()
     w.run()
-    print('exit prog')
-    print('check files num={}'.format(len(w.finder.find_file_list)))
