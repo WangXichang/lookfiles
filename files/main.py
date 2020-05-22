@@ -82,7 +82,7 @@ class main:
 
         self.signal = False
         self.time = time.time()
-        self.test_path = 'e:\\test'
+        self.test_path = 'd:\\anaconda3'
         self.finder = FileFinder(self.test_path)
         self.time_step = 0.5    # for progress bar
 
