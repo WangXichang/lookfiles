@@ -165,11 +165,12 @@ class main:
                 break
 
     def run_prog2(self):
+        self.text_result.insert(tk.INSERT, '{}\nstep-2 start\n'.format('='*60))
         self.findmd5 = FileMd5(self.findfiler.find_file_list,
                                msg_text=self.text_result,
                                pbar=self.update_progress_bar)
         self.findmd5.run()
-        self.text_result.insert(tk.INSERT, 'step-2 end\n')
+        self.text_result.insert(tk.INSERT, 'step-2 end\n{}\n'.format('='*60))
 
         # t = time.time()
         # for percent in range(1, 101):
@@ -267,88 +268,55 @@ class FileMd5:
         self.total_group_num = 0
 
     def run(self):
-        self.find_file_md5_list = self.run_md5_process(self.find_file_list)
+        self.find_file_md5_list = self.run_md5_thread(self.find_file_list)
         self.find_file_md5_list = sorted(self.find_file_md5_list, key=lambda x: x[2])
-
-    def run_md5_process(self, find_file_list):
-        t = time.time()
-        seg_num = os.cpu_count()
-        tlen = len(find_file_list)
-        seg_len = int(tlen/seg_num)
-        file_seg_list = [find_file_list[i*seg_len:(i+1)*seg_len] if i<seg_num-1 else
-                         find_file_list[i*seg_len:]
-                         for i in range(seg_num)]
-        with futures.ProcessPoolExecutor() as executor:
-            to_do = []
-            future_dict = dict()
-            for fi, file_list in enumerate(file_seg_list):
-                future = executor.submit(self.run_md5, (file_list, 'md5 proc-'+str(fi)))
-                to_do.append(future)
-                future_dict.update({future: fi})
-                self.msg_text.insert(tk.INSERT, 'process-{} start ... \n'.format(fi))
-            result = []
-            for future in futures.as_completed(to_do):
-                res = future.result()
-                result.extend(res)
-                self.msg_text.insert(tk.INSERT, 'process-{} start ... \n'.format(fi))
-        # print('md5 process elapsed: {:.2f}'.format(time.time()-t))
-        return result
 
     def run_md5_thread(self, find_file_list):
         t = time.time()
-        workers = 30
-        seg_len = int(len(find_file_list)/workers)
-        file_seg_list = [find_file_list[i*seg_len:(i+1)*seg_len]
-                         if i < workers-1 else
+        seg_num = 20
+        self.total_file_num = len(find_file_list)
+        seg_len = int(self.total_file_num/seg_num)
+        file_seg_list = [find_file_list[i*seg_len:(i+1)*seg_len] if i<seg_num-1 else
                          find_file_list[i*seg_len:]
-                         for i in range(workers)]
-        with futures.ThreadPoolExecutor(max_workers=workers) as executor:
+                         for i in range(seg_num)]
+        with futures.ThreadPoolExecutor(max_workers=seg_num) as executor:
             to_do = []
             future_dict = dict()
-            for fi, flist in enumerate(file_seg_list):
-                future = executor.submit(self.run_md5, flist)
+            for fi, file_list in enumerate(file_seg_list):
+                future = executor.submit(self.run_md5, file_list, 'md5 thread-'+str(fi))
                 to_do.append(future)
                 future_dict.update({future: fi})
-                print('thread-{} start len={} ... '.format(fi, len(flist)))
+                self.msg_text.insert(tk.INSERT, 'md5 thread-{} start ... \n'.format(fi))
             result = []
             for future in futures.as_completed(to_do):
                 res = future.result()
                 result.extend(res)
-                print('thread-{} end'.format(future_dict[future]))
-        print('md5 thread elapsed: {:.2f}'.format(time.time()-t))
+                self.msg_text.insert(tk.INSERT, 'md5 thread-{} end ... \n'.format(fi))
+        # print('md5 process elapsed: {:.2f}'.format(time.time()-t))
+        self.msg_text.insert(tk.INSERT, 'calc md5 end \n{}\n'.format(fi, '-'*60))
         return result
 
-    @staticmethod
-    def get_file_md5(filename):
-        fp = open(filename, 'rb')
-        m5 = hashlib.md5()
-        m5.update(fp.read())
-        return m5.digest()
-
-    def run_md5(self, file_list, task='run md5'):
+    def run_md5(self, file_list=None, task='run md5'):
         t = time.time()
-        # print('get md5 ...')
         self.msg_text.insert(tk.INSERT, 'calc md5 ...\n'+task)
-        if len(file_list) > 0:
-            # pbar = ProgressBar(total=len(file_list))
-            pass
-        else:
-            # print('no files found!')
+        if len(file_list) == 0:
             self.msg_text.insert(tk.INSERT, 'no file found!\n')
             return
 
         find_file_md5_list = []
         total = len(file_list)
         for i, f in enumerate(file_list):
-            self.pbar(i/total, time.time()-t, task)
+            percent = int(i/total*100)
+            self.pbar(percent, time.time()-t, task)
+            if percent % 10 ==0:
+                self.msg_text.insert(tk.INSERT, task+' percent= {}\n'.format(percent))
             try:
                 f_m5 = self.make_md5(f)
             except IOError:
-                # print('error read file: {}'.format(f))
                 self.find_fail.append('file: ' + f)
                 continue
             find_file_md5_list.append([f, os.path.getsize(f), f_m5])
-        self.msg_text.insert(tk.INSERT, 'elapsed: {:3f}\n'.format(time.time()-t))
+        self.msg_text.insert(tk.INSERT, task+' elapsed: {:3f}\n'.format(time.time()-t))
         return find_file_md5_list
 
     @staticmethod
