@@ -2,14 +2,14 @@
 
 
 import os
-import glob
 import time
 import sys
-import filecmp
 import hashlib
 from collections import namedtuple as ntp
 from concurrent import futures
 import asyncio
+# import filecmp
+# import glob
 
 
 help_doc = \
