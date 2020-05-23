@@ -32,7 +32,7 @@ help_doc = \
 
 
 def same_files(dir: str, task='check_test', step=0):
-    fd = FindSameFiles(dir, task)
+    fd = FindMain(dir, task)
     if step == 0:
         fd.run()
     elif step in [1, 2, 3, 4]:
@@ -42,7 +42,7 @@ def same_files(dir: str, task='check_test', step=0):
     return fd
 
 
-class FindSameFiles:
+class FindMain:
     def __init__(self, check_dir=None, task='check'):
         # input para
         self.check_dir = check_dir

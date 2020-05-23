@@ -8,7 +8,7 @@ import os
 from concurrent import futures
 from tkinter import Canvas, Tk, StringVar, Label, Button, CENTER, NW, GROOVE
 import tkinter as tk
-import tkinter.messagebox as msgbox
+# import tkinter.messagebox as msgbox
 
 
 class main:
@@ -74,16 +74,15 @@ class main:
         self.button3_start.grid(row=2, column=3, padx=10, pady=10)
         self.button4_start.grid(row=2, column=4, padx=10, pady=10)
 
-        self.label_path.place(x=5, y=68) # grid(row=3, column=1, sticky='W')
-        self.entry_path.place(x=80, y=65, width=700)        # grid(row=4, column=1, columnspan=7, sticky='WE')
+        self.label_path.place(x=5, y=68)
+        self.entry_path.place(x=80, y=65, width=700)
 
         self.text_result = tk.Text(self.mywin, width=110, height=25)
         self.text_result.place(x=12, y=105)
         # self.path_frame = tk.Frame(self.mywin).grid(row=6, column=1, columnspan=4)
 
-        self.canvas_progress_bar.place(x=5, y = 470, width=790)  # grid(row=7, column=1, columnspan=4, padx=10, pady=10)
-        self.label_progress_bar_percent.place(x=5, y=440)  # grid(row=9, column=1)
-        # self.entry_path.pack()
+        self.canvas_progress_bar.place(x=5, y=470, width=790)
+        self.label_progress_bar_percent.place(x=5, y=440)
 
         self.signal = False
         self.time = time.time()
@@ -167,7 +166,7 @@ class main:
     def run_prog2(self):
         self.text_result.insert(tk.INSERT, '{}\nstep-2 start\n'.format('='*60))
         self.findmd5 = FileMd5(self.findfiler.find_file_list,
-                               msg_text=self.text_result,
+                               msg_fun=self.disp_msg_in_text_result,
                                pbar=self.update_progress_bar)
         self.findmd5.run()
         self.text_result.insert(tk.INSERT, 'step-2 end\n{}\n'.format('='*60))
@@ -200,6 +199,9 @@ class main:
         self.var_progress_bar_percent.set('%0.2f %%' % percent)
         green_length = int(self.bar_length * percent / 100)
         self.canvas_progress_bar.coords(self.canvas_shape, (0, 0, green_length, 25))
+
+    def disp_msg_in_text_result(self, msg=''):
+        self.text_result.insert(tk.INSERT, msg)
 
 
 class FileFinder:
@@ -253,8 +255,8 @@ class FileFinder:
 
 
 class FileMd5:
-    def __init__(self, file_list=None, msg_text=None, pbar=None):
-        self.msg_text = msg_text
+    def __init__(self, file_list=None, msg_fun=None, pbar=None):
+        self.msg_fun = msg_fun
         self.pbar = pbar
         self.find_file_list = file_list
 
@@ -268,12 +270,15 @@ class FileMd5:
         self.total_group_num = 0
 
     def run(self):
+        if len(self.find_file_list) == 0:
+            self.msg_fun('no file in file_list!')
+            return
         self.find_file_md5_list = self.run_md5_thread(self.find_file_list)
         self.find_file_md5_list = sorted(self.find_file_md5_list, key=lambda x: x[2])
 
     def run_md5_thread(self, find_file_list):
         t = time.time()
-        seg_num = 20
+        seg_num = 10
         self.total_file_num = len(find_file_list)
         seg_len = int(self.total_file_num/seg_num)
         file_seg_list = [find_file_list[i*seg_len:(i+1)*seg_len] if i<seg_num-1 else
@@ -286,21 +291,21 @@ class FileMd5:
                 future = executor.submit(self.run_md5, file_list, 'md5 thread-'+str(fi))
                 to_do.append(future)
                 future_dict.update({future: fi})
-                self.msg_text.insert(tk.INSERT, 'md5 thread-{} start ... \n'.format(fi))
+                self.msg_fun('md5 thread-{} start ... \n'.format(fi))
             result = []
             for future in futures.as_completed(to_do):
                 res = future.result()
                 result.extend(res)
-                self.msg_text.insert(tk.INSERT, 'md5 thread-{} end ... \n'.format(fi))
+                self.msg_fun('md5 thread-{} end ... \n'.format(fi))
         # print('md5 process elapsed: {:.2f}'.format(time.time()-t))
-        self.msg_text.insert(tk.INSERT, 'calc md5 end \n{}\n'.format(fi, '-'*60))
+        self.msg_fun('calc md5 end \n{}\n'.format(fi, '-'*60))
         return result
 
     def run_md5(self, file_list=None, task='run md5'):
         t = time.time()
-        self.msg_text.insert(tk.INSERT, 'calc md5 ...\n'+task)
+        self.msg_fun('calc md5 ...\n'+task)
         if len(file_list) == 0:
-            self.msg_text.insert(tk.INSERT, 'no file found!\n')
+            self.msg_fun('no file found!\n')
             return
 
         find_file_md5_list = []
@@ -308,15 +313,15 @@ class FileMd5:
         for i, f in enumerate(file_list):
             percent = int(i/total*100)
             self.pbar(percent, time.time()-t, task)
-            if percent % 10 ==0:
-                self.msg_text.insert(tk.INSERT, task+' percent= {}\n'.format(percent))
+            if percent in [10, 50, 80]:
+                self.msg_fun(task+' percent= {}\n'.format(percent))
             try:
                 f_m5 = self.make_md5(f)
             except IOError:
                 self.find_fail.append('file: ' + f)
                 continue
             find_file_md5_list.append([f, os.path.getsize(f), f_m5])
-        self.msg_text.insert(tk.INSERT, task+' elapsed: {:3f}\n'.format(time.time()-t))
+        self.msg_fun(task+' elapsed: {:3f}\n'.format(time.time()-t))
         return find_file_md5_list
 
     @staticmethod
